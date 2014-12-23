@@ -18,22 +18,26 @@ var PLUGIN_NAME = "istanbul-cobertura-badger";
 // plugin level function (dealing with files)
 function gulpIstanbulBadger(coberturaFile, destinationDir, downloadCallback) {
   if (!coberturaFile) {
-    throw new Error(PLUGIN_NAME, 'Missing cobertura file path text!');
+    return downloadCallback(new Error(PLUGIN_NAME, 'Missing cobertura file path text!'));
   } else
   if (!destinationDir) {
-    throw new Error(PLUGIN_NAME, 'Missing destination where to place the badge!');
+    return downloadCallback(new Error(PLUGIN_NAME, 'Missing destination where to place the badge!'));
   }
 
-  var coberturaXmlReport = fs.readFileSync(coberturaFile);
-  var xs = new XMLSplitter('/coverage');
-  xs.on('data', function(data) {
-    var overallPercentage = (((parseFloat(data["line-rate"]) + parseFloat(data["branch-rate"])) / 2) * 100).toFixed(0);
-    var color = overallPercentage >= 80 ? "brightgreen" : (overallPercentage >= 75 ? "yellow" : "red");
-    var url = 'http://img.shields.io/badge/coverage-' + overallPercentage + '%-' + color + '.svg';
-    var badgeFileName = path.join(destinationDir, "coverage.svg");
+  fs.readFile(coberturaFile,function(err,coberturaXmlReport){
+    if(err){
+      return downloadCallback(err);
+    }
+    var xs = new XMLSplitter('/coverage');
+    xs.on('data', function(data) {
+      var overallPercentage = ((parseFloat(data["line-rate"]) + parseFloat(data["branch-rate"])) / 2 * 100).toFixed(0);
+      var color = overallPercentage >= 80 ? "brightgreen" : (overallPercentage >= 75 ? "yellow" : "red");
+      var url = 'http://img.shields.io/badge/coverage-' + overallPercentage + '%-' + color + '.svg';
+      var badgeFileName = path.join(destinationDir, "coverage.svg");
 
-    download(url, badgeFileName, downloadCallback);
-  }).parseString(coberturaXmlReport);
+      download(url, badgeFileName, downloadCallback);
+    }).parseString(coberturaXmlReport);
+  });
 }
 
 // exporting the plugin main function
